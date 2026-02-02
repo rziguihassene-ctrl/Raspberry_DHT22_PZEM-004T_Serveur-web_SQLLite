@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surveillance DHT22 + PZEM-004T</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 28px;
+        }
+
+        .header-info {
+            text-align: right;
+        }
+
+        .last-update {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .metric-label {
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .metric-unit {
+            font-size: 14px;
+            color: #9ca3af;
+            margin-left: 4px;
+        }
+
+        /* Cartes spécifiques */
+        .temp-card {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+        }
+
+        .temp-card h2 {
+            color: white;
+            border-bottom-color: rgba(255,255,255,0.3);
+        }
+
+        .temp-card .metric {
+            background: rgba(255,255,255,0.2);
+            border-left-color: white;
+        }
+
+        .temp-card .metric-label,
+        .temp-card .metric-value,
+        .temp-card .metric-unit {
+            color: white;
+        }
+
+        .hum-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .hum-card h2 {
+            color: white;
+            border-bottom-color: rgba(255,255,255,0.3);
+        }
+
+        .hum-card .metric {
+            background: rgba(255,255,255,0.2);
+            border-left-color: white;
+        }
+
+        .hum-card .metric-label,
+        .hum-card .metric-value,
+        .hum-card .metric-unit {
+            color: white;
+        }
+
+        .power-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .power-card h2 {
+            color: white;
+            border-bottom-color: rgba(255,255,255,0.3);
+        }
+
+        .power-card .metric {
+            background: rgba(255,255,255,0.2);
+            border-left-color: white;
+        }
+
+        .power-card .metric-label,
+        .power-card .metric-value,
+        .power-card .metric-unit {
+            color: white;
+        }
+
+        .energy-card {
+            background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%);
+            color: #333;
+        }
+
+        .energy-card h2 {
+            color: #764ba2;
+            border-bottom-color: rgba(118,75,162,0.3);
+        }
+
+        /* Affichage grand */
+        .big-display {
+            text-align: center;
+            padding: 20px;
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        /* Graphiques */
+        .chart-container {
+            height: 300px;
+            margin-top: 15px;
+        }
+
+        /* Statistiques */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .stat-item {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        /* Badge de statut */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-ok {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .big-display {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <header>
+            <div>
+                <h1>🌡️⚡ Surveillance Temps Réel</h1>
+                <p style="color: #6b7280; margin-top: 5px;">DHT22 + PZEM-004T</p>
+            </div>
+            <div class="header-info">
+                <span class="status-badge status-ok">● En ligne</span>
+                <div class="last-update">
+                    Dernière mise à jour : <span id="lastUpdate">--:--:--</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Affichages principaux -->
+        <div class="grid">
+            <!-- Température -->
+            <div class="card temp-card">
+                <h2>🌡️ Température</h2>
+                <div class="big-display" id="tempDisplay">--°C</div>
+                <div class="metric">
+                    <span class="metric-label">Point de rosée</span>
+                    <span class="metric-value" id="pointRosee">--<span class="metric-unit">°C</span></span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Indice chaleur</span>
+                    <span class="metric-value" id="indiceChaleur">--<span class="metric-unit">°C</span></span>
+                </div>
+            </div>
+
+            <!-- Humidité -->
+            <div class="card hum-card">
+                <h2>💧 Humidité</h2>
+                <div class="big-display" id="humDisplay">--%</div>
+            </div>
+
+            <!-- Puissance -->
+            <div class="card power-card">
+                <h2>⚡ Puissance</h2>
+                <div class="big-display" id="puissanceDisplay">-- W</div>
+                <div class="metric">
+                    <span class="metric-label">Tension</span>
+                    <span class="metric-value" id="tension">--<span class="metric-unit">V</span></span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Courant</span>
+                    <span class="metric-value" id="courant">--<span class="metric-unit">A</span></span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Fréquence</span>
+                    <span class="metric-value" id="frequence">--<span class="metric-unit">Hz</span></span>
+                </div>
+            </div>
+
+            <!-- Énergie -->
+            <div class="card energy-card">
+                <h2>🔋 Énergie</h2>
+                <div class="big-display" id="energieDisplay">-- Wh</div>
+                <div class="metric">
+                    <span class="metric-label">Facteur de puissance</span>
+                    <span class="metric-value" id="facteurPuissance">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graphiques -->
+        <div class="grid">
+            <!-- Graphique Température -->
+            <div class="card">
+                <h2>📈 Température (30 dernières mesures)</h2>
+                <div class="chart-container">
+                    <canvas id="chartTemperature"></canvas>
+                </div>
+            </div>
+
+            <!-- Graphique Humidité -->
+            <div class="card">
+                <h2>📈 Humidité (30 dernières mesures)</h2>
+                <div class="chart-container">
+                    <canvas id="chartHumidite"></canvas>
+                </div>
+            </div>
+
+            <!-- Graphique Puissance -->
+            <div class="card">
+                <h2>📈 Puissance (30 dernières mesures)</h2>
+                <div class="chart-container">
+                    <canvas id="chartPuissance"></canvas>
+                </div>
+            </div>
+
+            <!-- Graphique Tension -->
+            <div class="card">
+                <h2>📈 Tension (30 dernières mesures)</h2>
+                <div class="chart-container">
+                    <canvas id="chartTension"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistiques 24h -->
+        <div class="grid">
+            <!-- Stats Environnement -->
+            <div class="card">
+                <h2>📊 Statistiques Environnement (24h)</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-temp-moy">--</div>
+                        <div class="stat-label">Température moyenne</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-temp-range">--</div>
+                        <div class="stat-label">Amplitude température</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-hum-moy">--</div>
+                        <div class="stat-label">Humidité moyenne</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-nb-mesures-env">--</div>
+                        <div class="stat-label">Nombre de mesures</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Électrique -->
+            <div class="card">
+                <h2>📊 Statistiques Électrique (24h)</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-puissance-moy">--</div>
+                        <div class="stat-label">Puissance moyenne</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-puissance-max">--</div>
+                        <div class="stat-label">Puissance max</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-energie-tot">--</div>
+                        <div class="stat-label">Énergie totale</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-nb-mesures-elec">--</div>
+                        <div class="stat-label">Nombre de mesures</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        let chartTemp, chartHum, chartPuissance, chartTension;
+
+        // Initialiser les graphiques
+        function initCharts() {
+            // Température
+            const ctxTemp = document.getElementById('chartTemperature').getContext('2d');
+            chartTemp = new Chart(ctxTemp, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Température (°C)',
+                        data: [],
+                        borderColor: '#ff6b6b',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Température (°C)' }
+                        }
+                    }
+                }
+            });
+
+            // Humidité
+            const ctxHum = document.getElementById('chartHumidite').getContext('2d');
+            chartHum = new Chart(ctxHum, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Humidité (%)',
+                        data: [],
+                        borderColor: '#00f2fe',
+                        backgroundColor: 'rgba(0, 242, 254, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            title: { display: true, text: 'Humidité (%)' }
+                        }
+                    }
+                }
+            });
+
+            // Puissance
+            const ctxPuissance = document.getElementById('chartPuissance').getContext('2d');
+            chartPuissance = new Chart(ctxPuissance, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Puissance (W)',
+                        data: [],
+                        borderColor: '#f5576c',
+                        backgroundColor: 'rgba(245, 87, 108, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Puissance (W)' }
+                        }
+                    }
+                }
+            });
+
+            // Tension
+            const ctxTension = document.getElementById('chartTension').getContext('2d');
+            chartTension = new Chart(ctxTension, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Tension (V)',
+                        data: [],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Tension (V)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Mettre à jour le dashboard
+        async function updateDashboard() {
+            try {
+                const response = await fetch('/api/donnees');
+                const data = await response.json();
+
+                // Mesures environnement
+                if (data.mesures_environnement && data.mesures_environnement.length > 0) {
+                    const derniere_env = data.mesures_environnement[data.mesures_environnement.length - 1];
+                    
+                    document.getElementById('tempDisplay').textContent = 
+                        `${derniere_env.temperature_C.toFixed(1)}°C`;
+                    document.getElementById('humDisplay').textContent = 
+                        `${derniere_env.humidity_pct.toFixed(1)}%`;
+                    document.getElementById('pointRosee').innerHTML = 
+                        `${derniere_env.point_rosee.toFixed(1)}<span class="metric-unit">°C</span>`;
+                    document.getElementById('indiceChaleur').innerHTML = 
+                        `${derniere_env.indice_chaleur.toFixed(1)}<span class="metric-unit">°C</span>`;
+                }
+
+                // Mesures électriques
+                if (data.mesures_electriques && data.mesures_electriques.length > 0) {
+                    const derniere_elec = data.mesures_electriques[data.mesures_electriques.length - 1];
+                    
+                    document.getElementById('tension').innerHTML = 
+                        `${derniere_elec.voltage_V.toFixed(1)}<span class="metric-unit">V</span>`;
+                    document.getElementById('courant').innerHTML = 
+                        `${derniere_elec.current_A.toFixed(3)}<span class="metric-unit">A</span>`;
+                    document.getElementById('puissanceDisplay').textContent = 
+                        `${derniere_elec.power_W.toFixed(1)} W`;
+                    document.getElementById('energieDisplay').textContent = 
+                        `${derniere_elec.energy_Wh.toFixed(0)} Wh`;
+                    document.getElementById('frequence').innerHTML = 
+                        `${derniere_elec.frequency_Hz.toFixed(2)}<span class="metric-unit">Hz</span>`;
+                    document.getElementById('facteurPuissance').textContent = 
+                        derniere_elec.power_factor.toFixed(2);
+                }
+
+                // Statistiques environnement
+                const stats_env = data.statistiques?.environnement;
+                if (stats_env) {
+                    document.getElementById('stat-temp-moy').textContent = 
+                        stats_env.temp_moy ? stats_env.temp_moy.toFixed(1) + '°C' : '--';
+                    
+                    if (stats_env.temp_max && stats_env.temp_min) {
+                        const amplitude = stats_env.temp_max - stats_env.temp_min;
+                        document.getElementById('stat-temp-range').textContent = 
+                            amplitude.toFixed(1) + '°C';
+                    }
+                    
+                    document.getElementById('stat-hum-moy').textContent = 
+                        stats_env.hum_moy ? stats_env.hum_moy.toFixed(1) + '%' : '--';
+                    document.getElementById('stat-nb-mesures-env').textContent = 
+                        stats_env.nb_mesures || '--';
+                }
+
+                // Statistiques électriques
+                const stats_elec = data.statistiques?.electrique;
+                if (stats_elec) {
+                    document.getElementById('stat-puissance-moy').textContent = 
+                        stats_elec.puissance_moy ? stats_elec.puissance_moy.toFixed(1) + 'W' : '--';
+                    document.getElementById('stat-puissance-max').textContent = 
+                        stats_elec.puissance_max ? stats_elec.puissance_max.toFixed(1) + 'W' : '--';
+                    document.getElementById('stat-energie-tot').textContent = 
+                        stats_elec.energie_totale ? (stats_elec.energie_totale / 1000).toFixed(3) + 'kWh' : '--';
+                    document.getElementById('stat-nb-mesures-elec').textContent = 
+                        stats_elec.nb_mesures || '--';
+                }
+
+                // Mettre à jour les graphiques
+                updateCharts(data.mesures_environnement, data.mesures_electriques);
+
+                // Dernière mise à jour
+                document.getElementById('lastUpdate').textContent = 
+                    new Date().toLocaleTimeString('fr-FR');
+
+            } catch (error) {
+                console.error('Erreur mise à jour:', error);
+            }
+        }
+
+        function updateCharts(mesures_env, mesures_elec) {
+            if (!chartTemp || !chartHum || !chartPuissance || !chartTension) return;
+
+            // Graphique température
+            if (mesures_env && mesures_env.length > 0) {
+                const derniers_env = mesures_env.slice(-30);
+                const labels_env = derniers_env.map(m => 
+                    new Date(m.timestamp).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})
+                );
+
+                chartTemp.data.labels = labels_env;
+                chartTemp.data.datasets[0].data = derniers_env.map(m => m.temperature_C);
+                chartTemp.update('none');
+
+                chartHum.data.labels = labels_env;
+                chartHum.data.datasets[0].data = derniers_env.map(m => m.humidity_pct);
+                chartHum.update('none');
+            }
+
+            // Graphiques électriques
+            if (mesures_elec && mesures_elec.length > 0) {
+                const derniers_elec = mesures_elec.slice(-30);
+                const labels_elec = derniers_elec.map(m => 
+                    new Date(m.timestamp).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})
+                );
+
+                chartPuissance.data.labels = labels_elec;
+                chartPuissance.data.datasets[0].data = derniers_elec.map(m => m.power_W);
+                chartPuissance.update('none');
+
+                chartTension.data.labels = labels_elec;
+                chartTension.data.datasets[0].data = derniers_elec.map(m => m.voltage_V);
+                chartTension.update('none');
+            }
+        }
+
+        // Initialisation
+        window.addEventListener('load', () => {
+            initCharts();
+            updateDashboard();
+            setInterval(updateDashboard, 2000); // Mise à jour toutes les 2 secondes
+        });
+    </script>
+</body>
+</html>
