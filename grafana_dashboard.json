@@ -1,0 +1,394 @@
+{
+  "dashboard": {
+    "title": "Surveillance DHT22 + PZEM-004T",
+    "tags": ["iot", "raspberry-pi", "sensors"],
+    "timezone": "browser",
+    "editable": true,
+    "graphTooltip": 1,
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "🌡️ Température",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "query": "SELECT mean(\"temperature_C\") FROM \"environnement\" WHERE $timeFilter GROUP BY time($__interval) fill(linear)",
+            "rawQuery": true,
+            "refId": "A",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "influxdb-surveillance"
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "celsius",
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 10,
+              "gradientMode": "scheme"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "blue"},
+                {"value": 20, "color": "green"},
+                {"value": 30, "color": "orange"},
+                {"value": 35, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "💧 Humidité",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "query": "SELECT mean(\"humidity_pct\") FROM \"environnement\" WHERE $timeFilter GROUP BY time($__interval) fill(linear)",
+            "rawQuery": true,
+            "refId": "A",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "influxdb-surveillance"
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 10,
+              "gradientMode": "scheme"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "red"},
+                {"value": 30, "color": "yellow"},
+                {"value": 40, "color": "green"},
+                {"value": 70, "color": "yellow"},
+                {"value": 80, "color": "red"}
+              ]
+            },
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "📊 Valeurs actuelles - Environnement",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 8},
+        "targets": [
+          {
+            "query": "SELECT last(\"temperature_C\") FROM \"environnement\" WHERE $timeFilter",
+            "rawQuery": true,
+            "refId": "A",
+            "alias": "Température",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "influxdb-surveillance"
+            }
+          },
+          {
+            "query": "SELECT last(\"humidity_pct\") FROM \"environnement\" WHERE $timeFilter",
+            "rawQuery": true,
+            "refId": "B",
+            "alias": "Humidité",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "influxdb-surveillance"
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"}
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Température"},
+              "properties": [{"id": "unit", "value": "celsius"}]
+            },
+            {
+              "matcher": {"id": "byName", "options": "Humidité"},
+              "properties": [{"id": "unit", "value": "percent"}]
+            }
+          ]
+        },
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "textMode": "value_and_name"
+        }
+      },
+      {
+        "id": 4,
+        "title": "💦 Point de rosée",
+        "type": "timeseries",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 8},
+        "targets": [
+          {
+            "query": "SELECT mean(\"point_rosee\") FROM \"environnement\" WHERE $timeFilter GROUP BY time($__interval) fill(linear)",
+            "rawQuery": true,
+            "refId": "A",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "influxdb-surveillance"
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "celsius",
+            "custom": {"lineWidth": 1, "fillOpacity": 20}
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "⚡ Tension (Voltage)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 12},
+        "targets": [
+          {
+            "query": "SELECT mean(\"voltage_V\") FROM \"electrique\" WHERE $timeFilter GROUP BY time($__interval) fill(linear)",
+            "rawQuery": true,
+            "refId": "A",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "influxdb-surveillance"
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "volt",
+            "color": {"mode": "thresholds"},
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 10
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "red"},
+                {"value": 210, "color": "yellow"},
+                {"value": 220, "color": "green"},
+                {"value": 240, "color": "yellow"},
+                {"value": 250, "color": "red"}
+              ]
+            },
+            "min": 200,
+            "max": 250
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "🔌 Courant (Current)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 12},
+        "targets": [
+          {
+            "query": "SELECT mean(\"current_A\") FROM \"electrique\" WHERE $timeFilter GROUP BY time($__interval) fill(linear)",
+            "rawQuery": true,
+            "refId": "A",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "influxdb-surveillance"
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "amp",
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 10
+            },
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "💡 Puissance (Power)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 12},
+        "targets": [
+          {
+            "query": "SELECT mean(\"power_W\") FROM \"electrique\" WHERE $timeFilter GROUP BY time($__interval) fill(linear)",
+            "rawQuery": true,
+            "refId": "A",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "influxdb-surveillance"
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "watt",
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 15,
+              "gradientMode": "opacity"
+            },
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "⚡ Énergie totale",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 20},
+        "targets": [
+          {
+            "query": "SELECT last(\"energy_Wh\") FROM \"electrique\" WHERE $timeFilter",
+            "rawQuery": true,
+            "refId": "A",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "influxdb-surveillance"
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "watth",
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 1000, "color": "yellow"},
+                {"value": 5000, "color": "orange"},
+                {"value": 10000, "color": "red"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "textMode": "value"
+        }
+      },
+      {
+        "id": 9,
+        "title": "📊 Fréquence",
+        "type": "gauge",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 20},
+        "targets": [
+          {
+            "query": "SELECT mean(\"frequency_Hz\") FROM \"electrique\" WHERE $timeFilter GROUP BY time($__interval) fill(linear)",
+            "rawQuery": true,
+            "refId": "A",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "influxdb-surveillance"
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "hertz",
+            "min": 48,
+            "max": 52,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "red"},
+                {"value": 49, "color": "yellow"},
+                {"value": 49.5, "color": "green"},
+                {"value": 50.5, "color": "yellow"},
+                {"value": 51, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "⚙️ Facteur de puissance",
+        "type": "gauge",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 20},
+        "targets": [
+          {
+            "query": "SELECT mean(\"power_factor\") FROM \"electrique\" WHERE $timeFilter",
+            "rawQuery": true,
+            "refId": "A",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "influxdb-surveillance"
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "red"},
+                {"value": 0.7, "color": "yellow"},
+                {"value": 0.9, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 11,
+        "title": "📈 Consommation par heure",
+        "type": "timeseries",
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 20},
+        "targets": [
+          {
+            "query": "SELECT derivative(mean(\"energy_Wh\"), 1h) AS \"Consommation\" FROM \"electrique\" WHERE $timeFilter GROUP BY time(1h) fill(linear)",
+            "rawQuery": true,
+            "refId": "A",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "influxdb-surveillance"
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "watth",
+            "custom": {
+              "drawStyle": "bars",
+              "fillOpacity": 50
+            }
+          }
+        }
+      }
+    ]
+  },
+  "overwrite": true
+}
